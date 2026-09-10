@@ -35,7 +35,7 @@ WHERE o.opponentTeamID = a.opponentTeamID AND a.gameID = g.gameID AND g.gameID =
 GROUP BY o.teamName
 ORDER BY COUNT(g.gameID) DESC
 
--- What team did Maryland Men’s Soccer lose the worst against and when was the game?
+-- What team did Maryland Menâ€™s Soccer lose the worst against and when was the game?
 SELECT o.teamName AS 'Opponent Team Name', g.gameDate AS 'Game Date', 
 	(s.opponentScore - s.terpsScore) AS 'Score Difference'
 FROM [OpponentTeam] o, [Game] g, [IsAgainst] a, [Score] s
