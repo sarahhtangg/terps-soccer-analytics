@@ -1,0 +1,74 @@
+USE BUDT702_Project_0501_02
+
+-- Drop Tables
+DROP TABLE IF EXISTS [HeldAt];
+DROP TABLE IF EXISTS [IsAgainst];
+DROP TABLE IF EXISTS [FanAttendance];
+DROP TABLE IF EXISTS [Score];
+DROP TABLE IF EXISTS [Game];
+DROP TABLE IF EXISTS [OpponentTeam];
+DROP TABLE IF EXISTS [Location]
+
+-- Create Tables
+CREATE TABLE [Location] (
+	locationID CHAR(5) NOT NULL,
+	locationCity VARCHAR(20) NOT NULL,
+	locationState CHAR(2) NOT NULL
+	CONSTRAINT pk_Location_locationID PRIMARY KEY (locationID)
+);
+
+CREATE TABLE [OpponentTeam] (
+	opponentTeamID CHAR(6) NOT NULL,
+	teamName VARCHAR(50) NOT NULL
+	CONSTRAINT pk_OpponentTeam_opponentTeamID PRIMARY KEY (opponentTeamID)
+);
+
+CREATE TABLE [Game] (
+	gameID CHAR(8) NOT NULL,
+	gameDate DATE NOT NULL
+	CONSTRAINT pk_Game_gameID PRIMARY KEY (gameID)
+);
+
+CREATE TABLE [Score] (
+	gameID CHAR(8) NOT NULL,
+	opponentScore INT,
+	terpsScore INT,
+	CONSTRAINT pk_Score_gameID PRIMARY KEY (gameID),
+	CONSTRAINT fk_Score_gameID FOREIGN KEY (gameID)
+		REFERENCES [Game] (gameID)
+		ON DELETE NO ACTION ON UPDATE CASCADE
+);
+
+CREATE TABLE [FanAttendance] (
+	gameID CHAR(8) NOT NULL,
+	numOfFans VARCHAR(8)
+	CONSTRAINT pk_FanAttendance_gameID PRIMARY KEY (gameID),
+	CONSTRAINT fk_FanAttendance_gameID FOREIGN KEY (gameID)
+		REFERENCES [Game] (gameID)
+		ON DELETE NO ACTION ON UPDATE CASCADE
+);
+
+CREATE TABLE [HeldAt] (
+	locationID CHAR(5) NOT NULL,
+	gameID CHAR(8) NOT NULL,
+	homeAway CHAR(4) NOT NULL
+	CONSTRAINT pk_HeldAt_locationID_gameID PRIMARY KEY (locationID, gameID),
+	CONSTRAINT fk_HeldAt_locationID FOREIGN KEY (locationID)
+		REFERENCES [Location] (locationID)
+		ON DELETE NO ACTION ON UPDATE CASCADE,
+	CONSTRAINT fk_HeldAt_gameID FOREIGN KEY (gameID)
+		REFERENCES [Game] (gameID)
+		ON DELETE NO ACTION ON UPDATE CASCADE
+);
+
+CREATE TABLE [IsAgainst] (
+	gameID CHAR(8) NOT NULL,
+	opponentTeamID CHAR(6) NOT NULL
+	CONSTRAINT pk_IsAgainst_gameID_opponentTeamID PRIMARY KEY (gameID, opponentTeamID),
+	CONSTRAINT fk_IsAgainst_gameID FOREIGN KEY (gameID)
+		REFERENCES [Game] (gameID)
+		ON DELETE NO ACTION ON UPDATE CASCADE,
+	CONSTRAINT fk_IsAgainst_opponentTeamID FOREIGN KEY (opponentTeamID)
+		REFERENCES [OpponentTeam] (opponentTeamID)
+		ON DELETE NO ACTION ON UPDATE NO ACTION
+);

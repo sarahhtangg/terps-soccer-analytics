@@ -1,0 +1,79 @@
+USE BUDT702_Project_0501_02
+
+-- Select Statements & Business Statements
+
+-- Which teams did Maryland Men's Soccer play in 2022 and were the games at Home or Away?
+SELECT o.teamName AS 'Opponent Team Name', g.gameDate AS 'Game Date', h.homeAway AS 'Location'
+FROM [OpponentTeam] o
+JOIN [IsAgainst] a ON o.opponentTeamID = a.opponentTeamID
+JOIN [Game] g ON a.gameID = g.gameID
+JOIN [HeldAt] h ON g.gameID = h.gameID
+JOIN [Location] l ON h.locationID = l.locationID
+WHERE a.opponentTeamID = o.opponentTeamID AND g.gameDate > '12/31/2021' AND g.gameDate < '01/01/2023' 
+
+-- How many wins does Maryland Men's Soccer have against Virginia, when were the games, where were the games, what was the score, and how many fans attended?
+SELECT COUNT(g.gameID) AS 'Wins Against Virginia', g.gameDate AS 'Game Date',
+	CONCAT(l.locationCity, ', ', l.locationState) AS 'Location', 
+	CONCAT(s.terpsScore, '-', s.opponentScore) AS 'Score', f.numOfFans AS 'Fan Attendance'
+FROM [OpponentTeam] o
+JOIN [IsAgainst] a ON o.opponentTeamID = a.opponentTeamID
+JOIN [Game] g ON a.gameID = g.gameID
+JOIN [Score] s ON g.gameID = s.gameID
+JOIN [HeldAt] h ON g.gameID = h.gameID
+JOIN [Location] l ON h.locationID = l.locationID
+JOIN [FanAttendance] f ON g.gameID = f.gameID
+WHERE o.teamName = 'Virginia' AND s.terpsScore > s.opponentScore
+GROUP BY g.gameDate, l.locationCity, l.locationState, s.terpsScore, s.opponentScore, f.numOfFans
+
+-- How many times has Maryland Men's Soccer played each team, in descending order, and how many times did Maryland win, tie, or lose?
+SELECT o.teamName AS 'Opponent Team Name', COUNT(g.gameID) AS 'Number of Games Played', 
+	COUNT(CASE WHEN s.terpsScore > s.opponentScore THEN 1 ELSE 0 END) AS 'Number of Wins',
+	COUNT(CASE WHEN s.terpsScore = s.opponentScore THEN 1 ELSE 0 END) AS 'Number of Ties',
+	COUNT(CASE WHEN s.terpsScore < s.opponentScore THEN 1 ELSE 0 END) AS 'Number of Losses'
+FROM [OpponentTeam] o, [IsAgainst] a, [Game] g, [Score] s
+WHERE o.opponentTeamID = a.opponentTeamID AND a.gameID = g.gameID AND g.gameID = s.gameID
+GROUP BY o.teamName
+ORDER BY COUNT(g.gameID) DESC
+
+-- What team did Maryland Men’s Soccer lose the worst against and when was the game?
+SELECT o.teamName AS 'Opponent Team Name', g.gameDate AS 'Game Date', 
+	(s.opponentScore - s.terpsScore) AS 'Score Difference'
+FROM [OpponentTeam] o, [Game] g, [IsAgainst] a, [Score] s
+WHERE (s.opponentScore - s.terpsScore) =
+	(SELECT MAX(b.opponentScore - b.terpsScore)
+	FROM [Score] b
+	WHERE b.opponentScore > b.terpsScore) 
+AND g.gameID = s.gameID AND o.opponentTeamID = a.opponentTeamID AND a.gameID = g.gameID
+
+-- How many losses does Maryland Men's Soccer have against each team?
+SELECT o.teamName AS 'Opponent Team Name', COUNT(g.gameID) AS 'Number of Losses'
+FROM [OpponentTeam] o
+JOIN [IsAgainst] a ON o.opponentTeamID = a.opponentTeamID
+JOIN [Game] g ON a.gameID = g.gameID
+JOIN [Score] s ON s.gameID = g.gameID
+WHERE s.opponentScore > s.terpsScore
+GROUP BY o.teamName
+ORDER BY COUNT(g.gameID) DESC
+
+-- Does Maryland Men's Soccer win more at Home or Away, and how many games have they played at Home versus Away?
+SELECT (
+	SELECT COUNT(*)
+	FROM [HeldAt] h
+	JOIN [Score] s ON h.gameID = s.gameID
+	JOIN [Game] g ON g.gameID = h.gameID
+	WHERE h.homeAway = 'Home' AND s.terpsScore > s.opponentScore) AS 'Wins at Home',
+		(SELECT COUNT(*) 
+			FROM [HeldAt] h
+			JOIN [Score] s ON h.gameID = s.gameID
+			JOIN [Game] g ON g.gameID = h.gameID
+			WHERE h.homeAway = 'Home' AND s.terpsScore < s.opponentScore) AS 'Losses at Home',
+				(SELECT COUNT(*)
+				FROM [HeldAt] h
+				JOIN [Score] s ON h.gameID = s.gameID
+				JOIN [Game] g ON g.gameID = h.gameID
+				WHERE h.homeAway = 'Away' AND s.terpsScore > s.opponentScore) AS 'Wins at Away',
+					(SELECT COUNT(*)
+					FROM [HeldAt] h
+					JOIN [Score] s ON h.gameID = s.gameID
+					JOIN [Game] g ON g.gameID = h.gameID
+					WHERE h.homeAway = 'Away' AND s.terpsScore < s.opponentScore) AS 'Losses at Away'
